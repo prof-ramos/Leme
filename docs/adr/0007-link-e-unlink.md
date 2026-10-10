@@ -1,0 +1,3 @@
+# Ligar e desligar são `link` e `unlink`
+
+Os três pares usam as mesmas duas operações, na API e no MCP. O pedido leva o tipo (`task_note`, `task_habit` ou `note_habit`) e os dois ids. Ligar de novo o mesmo par é idempotente: devolve o estado atual, não erro e não duplica. Desligar um par inexistente também devolve o estado atual, sem erro. A tool única `link_note` foi recusada: ela cobre um par e deixa os outros dois sem nome.
