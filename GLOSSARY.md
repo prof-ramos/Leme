@@ -5,7 +5,7 @@ Aplicativo de produtividade de uma pessoa, na máquina dela. Reúne um quadro de
 ## Language
 
 **Tarefa**:
-Um item de trabalho em exatamente uma coluna, com um texto curto sem markdown.
+Um item de trabalho em exatamente uma coluna. Título obrigatório e descrição opcional em texto puro, sem markdown.
 _Avoid_: card, ticket, afazer
 
 **Nota**:
@@ -38,7 +38,7 @@ A maior sequência do hábito desde a criação.
 _Avoid_: melhor streak
 
 **Vínculo**:
-A ligação entre uma tarefa e uma nota, uma tarefa e um hábito, ou uma nota e um hábito. Um lado pode ter vários do outro; o mesmo par de ids existe no máximo uma vez.
+A ligação entre uma tarefa e uma nota, uma tarefa e um hábito, ou uma nota e um hábito. Um lado pode ter vários do outro; o mesmo par de ids, dentro do tipo (`task_note`, `task_habit` ou `note_habit`), existe no máximo uma vez.
 _Avoid_: noteId, taskId, habitId nas tabelas principais (tarefa, nota, hábito). Na tabela de junção, os ids dos dois lados são necessários.
 
 **Quadro**:
@@ -58,7 +58,7 @@ O peso de uma tarefa. Gravada como `baixa`, `media` ou `alta` (sem acento). Rót
 _Avoid_: urgência, importância
 
 **Cor**:
-O nome da cor de uma tarefa ou de um hábito: sage, silver, mist, clay ou ink. Nasce sage.
+O nome da cor de uma tarefa ou de um hábito: `sage`, `silver`, `mist`, `clay` ou `ink`. Nasce `sage`.
 _Avoid_: hex, rgb
 
 **Painel**:
