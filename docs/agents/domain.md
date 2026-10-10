@@ -1,46 +1,33 @@
 # Domain Docs
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+How agents should consume this repo's domain documentation before exploring or changing code.
 
 ## Before exploring, read these
 
-- **`GLOSSARY.md`** at the repo root, or
-- **`GLOSSARY-MAP.md`** at the repo root if it exists: it points at one `GLOSSARY.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-specific decisions.
+- **`GLOSSARY.md`** at the repo root — required vocabulary for the Leme.
+- **`docs/adr/`** — required decisions for the area you are about to touch. Start with the ADRs that match the work (for example `0001` and `0004` for storage and API key; `0003` and `0007` for vínculos; `0005` and `0006` for hábitos).
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
+If `GLOSSARY.md` or `docs/adr/` is missing, **stop and surface the gap**. Do not invent synonyms or re-decide architecture in silence. The issue #1 and these files are the language of the v1; `/domain-modeling` may extend them, but it does not replace reading what already exists.
 
 ## File structure
-
-Single-context repo (most repos):
 
 ```
 /
 ├── GLOSSARY.md
 ├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
-```
-
-Multi-context repo (presence of `GLOSSARY-MAP.md` at the root):
-
-```
-/
-├── GLOSSARY-MAP.md
-├── docs/adr/                          ← system-wide decisions
-└── src/
-    ├── ordering/
-    │   ├── GLOSSARY.md
-    │   └── docs/adr/                  ← context-specific decisions
-    └── billing/
-        ├── GLOSSARY.md
-        └── docs/adr/
+│   ├── 0001-sqlite-local-dois-processos.md
+│   ├── 0002-sem-usuario-na-v1.md
+│   ├── 0003-vinculo-em-juncao.md
+│   ├── 0004-chave-so-na-api-http.md
+│   ├── 0005-dia-civil-sao-paulo.md
+│   ├── 0006-sequencia-hoje-em-aberto.md
+│   └── 0007-link-e-unlink.md
+└── …
 ```
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `GLOSSARY.md`. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name, a tool description), use the term as defined in `GLOSSARY.md`. Don't drift to synonyms the glossary explicitly avoids. Prefer stored values (`todo`, `media`) where the glossary distinguishes them from UI labels.
 
 If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 
@@ -48,4 +35,4 @@ If the concept you need isn't in the glossary yet, that's a signal: either you'r
 
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
-> _Contradicts ADR-0007 (event-sourced orders), but worth reopening because…_
+> _Contradicts ADR-0004 (chave só na API HTTP), but worth reopening because…_

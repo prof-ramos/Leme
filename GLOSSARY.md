@@ -19,6 +19,7 @@ _Avoid_: rotina, meta, sequência
 **Registro**:
 A marca de um hábito num dia civil. No máximo um por hábito por dia. Pode estar feito ou não feito, e a linha permanece ao desmarcar.
 _Avoid_: check-in, log, pontinho
+A tool MCP pode chamar-se `log_habit`; o conceito de domínio continua sendo Registro.
 
 **Dia**:
 O dia civil no fuso America/Sao_Paulo, escrito `YYYY-MM-DD`.
@@ -37,15 +38,15 @@ A maior sequência do hábito desde a criação.
 _Avoid_: melhor streak
 
 **Vínculo**:
-A ligação entre uma tarefa e uma nota, uma tarefa e um hábito, ou uma nota e um hábito. Cada par pode ter vários.
-_Avoid_: noteId, taskId, habitId
+A ligação entre uma tarefa e uma nota, uma tarefa e um hábito, ou uma nota e um hábito. Um lado pode ter vários do outro; o mesmo par de ids existe no máximo uma vez.
+_Avoid_: noteId, taskId, habitId nas tabelas principais (tarefa, nota, hábito). Na tabela de junção, os ids dos dois lados são necessários.
 
 **Quadro**:
 O único conjunto de colunas onde as tarefas ficam.
 _Avoid_: board, projeto, kanban
 
 **Coluna**:
-Uma das três posições fixas do quadro: A fazer, Fazendo, Feito.
+Uma das três posições fixas do quadro. Gravada como `todo`, `doing` ou `done`. Rótulos na tela: A fazer, Fazendo, Feito.
 _Avoid_: status, lista, raia
 
 **Posição**:
@@ -53,7 +54,7 @@ O lugar de uma tarefa dentro da coluna dela. A coluna se ordena por posição.
 _Avoid_: ordem global, prioridade
 
 **Prioridade**:
-O peso de uma tarefa: baixa, média ou alta. Nasce média.
+O peso de uma tarefa. Gravada como `baixa`, `media` ou `alta` (sem acento). Rótulos na tela: baixa, média, alta. Nasce `media`.
 _Avoid_: urgência, importância
 
 **Cor**:

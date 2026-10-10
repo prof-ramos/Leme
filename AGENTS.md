@@ -11,3 +11,5 @@ Cinco papéis canônicos, com o rótulo igual ao nome do papel. Veja `docs/agent
 ### Domain docs
 
 Contexto único: um `GLOSSARY.md` na raiz e `docs/adr/`. Veja `docs/agents/domain.md`.
+
+Antes de explorar ou mudar código, leia o glossário e os ADRs que tocam a área. São obrigatórios neste repositório: não invente sinônimos nem reabra decisões em silêncio se os arquivos existirem; se faltarem, pare e diga.
