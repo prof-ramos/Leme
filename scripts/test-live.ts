@@ -10,14 +10,15 @@ const dir = await mkdtemp(join(tmpdir(), "leme-live-"));
 const port = process.env.LEME_TEST_PORT ?? "3218";
 const url = `http://127.0.0.1:${port}`;
 const key = "disposable-live-test";
-const env = { ...process.env, LEME_DB_PATH: join(dir, "leme.sqlite"), LEME_API_KEY: key };
-const web = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", port], { env, stdio: ["ignore", "pipe", "pipe"] });
+const mode = process.env.LEME_TEST_MODE === "production" ? "production" : "development";
+const env: NodeJS.ProcessEnv & { LEME_DB_PATH: string } = { ...process.env, NODE_ENV: mode, LEME_DB_PATH: join(dir, "leme.sqlite"), LEME_API_KEY: key };
+const web = spawn(process.execPath, ["node_modules/next/dist/bin/next", mode === "production" ? "start" : "dev", "--hostname", "127.0.0.1", "--port", port], { env, stdio: ["ignore", "pipe", "pipe"] });
 let output = "";
 web.stdout.on("data", (chunk) => { output += chunk; });
 web.stderr.on("data", (chunk) => { output += chunk; });
 const stopped = new Promise<void>((resolve) => web.once("exit", () => resolve()));
 await writeFile(join(dir, ".env.local"), `LEME_DB_PATH="${env.LEME_DB_PATH}"\n`);
-const mcpEnv = { ...process.env };
+const mcpEnv: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: mode };
 delete mcpEnv.LEME_DB_PATH;
 const client = new Client({ name: "leme-live-test", version: "1.0.0" });
 const transport = new StdioClientTransport({ command: process.execPath, args: [resolve("node_modules/tsx/dist/cli.mjs"), resolve("mcp/server.ts")], cwd: dir, env: Object.fromEntries(Object.entries(mcpEnv).filter((entry): entry is [string, string] => typeof entry[1] === "string")), stderr: "pipe" });
@@ -71,8 +72,7 @@ try {
   console.error(output);
   throw error;
 } finally {
-  await client.close();
-  await transport.close();
+  await Promise.allSettled([client.close(), transport.close()]);
   web.kill("SIGTERM");
   await stopped;
   await rm(dir, { recursive: true, force: true });
