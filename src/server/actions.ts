@@ -17,6 +17,12 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function deleteTaskAction(id: string) {
-  getLeme().deleteTask(id);
-  revalidatePath("/");
+  try {
+    getLeme().deleteTask(id);
+    revalidatePath("/");
+    return { ok: true as const };
+  } catch (error) {
+    const message = error instanceof DomainError ? error.message : "Não foi possível apagar a tarefa. Tente novamente.";
+    return { ok: false as const, error: message };
+  }
 }
