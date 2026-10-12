@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { DomainError, createLeme } from "./domain/tasks";
+import { DomainError } from "./domain/tasks";
+import { getLeme } from "./leme";
 
 export async function createTaskAction(formData: FormData) {
   const title = String(formData.get("title") ?? "");
   try {
-    createLeme().createTask(title);
+    getLeme().createTask(title);
     revalidatePath("/");
     return { ok: true as const };
   } catch (error) {
@@ -16,6 +17,6 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function deleteTaskAction(id: string) {
-  createLeme().deleteTask(id);
+  getLeme().deleteTask(id);
   revalidatePath("/");
 }

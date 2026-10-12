@@ -1,14 +1,11 @@
-import { DomainError, createLeme } from "@/server/domain/tasks";
+import { DomainError } from "@/server/domain/tasks";
+import { getLeme } from "@/server/leme";
 import { requireApiKey } from "@/server/http/auth";
-
-function leme() {
-  return createLeme();
-}
 
 export async function GET(request: Request) {
   const denied = requireApiKey(request);
   if (denied) return denied;
-  return Response.json({ tasks: leme().listTasks() });
+  return Response.json({ tasks: getLeme().listTasks() });
 }
 
 export async function POST(request: Request) {
@@ -23,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const task = leme().createTask(typeof body.title === "string" ? body.title : "");
+    const task = getLeme().createTask(typeof body.title === "string" ? body.title : "");
     return Response.json({ task }, { status: 201 });
   } catch (error) {
     if (error instanceof DomainError) {

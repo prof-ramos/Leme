@@ -1,7 +1,5 @@
 import { asc, eq, max } from "drizzle-orm";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
-import { defaultDatabasePath, openDatabase, type LemeDatabase } from "../db";
+import type { LemeDatabase } from "../db";
 import { tasks, type Task } from "../schema";
 
 export class DomainError extends Error {
@@ -44,10 +42,7 @@ function reindexColumn(db: LemeDatabase, column: Task["column"]) {
   });
 }
 
-export function createLeme(path = defaultDatabasePath()): Leme {
-  mkdirSync(dirname(path), { recursive: true });
-  const db = openDatabase(path);
-
+export function createTaskDomain(db: LemeDatabase): Leme {
   return {
     createTask(title: string) {
       const trimmed = title.trim();
@@ -55,21 +50,23 @@ export function createLeme(path = defaultDatabasePath()): Leme {
         throw new DomainError("BAD_REQUEST", "O título é obrigatório.");
       }
 
-      const now = Date.now();
-      const tarefa: Task = {
-        id: crypto.randomUUID(),
-        title: trimmed,
-        description: null,
-        column: "todo",
-        position: nextPosition(db, "todo"),
-        priority: "media",
-        color: "sage",
-        createdAt: now,
-        updatedAt: now,
-      };
+      return db.transaction((tx) => {
+        const now = Date.now();
+        const tarefa: Task = {
+          id: crypto.randomUUID(),
+          title: trimmed,
+          description: null,
+          column: "todo",
+          position: nextPosition(tx, "todo"),
+          priority: "media",
+          color: "sage",
+          createdAt: now,
+          updatedAt: now,
+        };
 
-      db.insert(tasks).values(tarefa).run();
-      return tarefa;
+        tx.insert(tasks).values(tarefa).run();
+        return tarefa;
+      }, { behavior: "immediate" });
     },
 
     listTasks() {
@@ -77,16 +74,14 @@ export function createLeme(path = defaultDatabasePath()): Leme {
     },
 
     deleteTask(id: string) {
-      const [existing] = db.select().from(tasks).where(eq(tasks.id, id)).all();
-      if (!existing) {
-        throw new DomainError("NOT_FOUND", "Tarefa não encontrada.");
-      }
-      db.delete(tasks).where(eq(tasks.id, id)).run();
-      reindexColumn(db, existing.column);
+      db.transaction((tx) => {
+        const [existing] = tx.select().from(tasks).where(eq(tasks.id, id)).all();
+        if (!existing) {
+          throw new DomainError("NOT_FOUND", "Tarefa não encontrada.");
+        }
+        tx.delete(tasks).where(eq(tasks.id, id)).run();
+        reindexColumn(tx, existing.column);
+      }, { behavior: "immediate" });
     },
   };
-}
-
-export function getLeme() {
-  return createLeme();
 }

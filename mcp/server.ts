@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
-import { createLeme } from "../src/server/domain/tasks";
+import { createLeme } from "../src/server/leme";
 
 function loadLocalEnv() {
   try {
@@ -45,6 +45,8 @@ server.tool(
     return { content: [{ type: "text", text: JSON.stringify(leme.listTasks()) }] };
   }
 );
+
+server.server.onclose = () => leme.close();
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "mcp": "tsx mcp/server.ts"
+    "mcp": "tsx mcp/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test:live": "tsx scripts/test-live.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",
