@@ -1,25 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { readFileSync } from "node:fs";
-import { z } from "zod";
+import nextEnv from "@next/env";
+import { createTaskInput } from "../src/server/domain/inputs";
 import { createLeme } from "../src/server/leme";
 
-function loadLocalEnv() {
-  try {
-    const text = readFileSync(".env.local", "utf8");
-    for (const line of text.split("\n")) {
-      const match = line.match(/^([^#=]+)=(.*)$/);
-      if (!match) continue;
-      const key = match[1].trim();
-      const value = match[2].trim();
-      if (!process.env[key]) process.env[key] = value;
-    }
-  } catch {
-    // Sem .env.local, usa o ambiente e o caminho padrão.
-  }
-}
-
-loadLocalEnv();
+// Match Next's .env precedence, quoting and expansion in the independent process.
+nextEnv.loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
 const leme = createLeme();
 const server = new McpServer({
@@ -30,7 +16,7 @@ const server = new McpServer({
 server.tool(
   "create_task",
   "Cria uma tarefa no fim da coluna A fazer, com prioridade média e cor sage.",
-  { title: z.string().describe("Título obrigatório da tarefa") },
+  createTaskInput.shape,
   async ({ title }) => {
     const task = leme.createTask(title);
     return { content: [{ type: "text", text: JSON.stringify(task) }] };

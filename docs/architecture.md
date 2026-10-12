@@ -11,3 +11,5 @@ O quadro básico implementa criar, listar e apagar tarefas (issue #2). Os demais
 ## Verificação
 
 `npm test` verifica regras com SQLite temporário; `npm run typecheck` verifica tipos. `npm run test:live` inicia Next e MCP reais, num banco descartável: cria 40 tarefas simultaneamente pelas duas portas, confere leitura compartilhada, apaga 20 e confere posições consecutivas e respostas HTTP. Usa a porta 3218 (ou `LEME_TEST_PORT`). Execute sem outro Next usando o mesmo checkout, pois `.next` é compartilhado. A inspeção visual do formulário e a persistência após recarregar são verificadas separadamente no navegador.
+
+A entrada de criação usa um schema Zod único em `domain/inputs.ts`, compartilhado pelo domínio, HTTP e MCP. HTTP valida o corpo como `unknown` antes de acessar campos, inclusive quando o JSON é `null`. MCP carrega variáveis com `@next/env`, respeitando a mesma precedência, aspas e expansão que o Next; variáveis já fornecidas ao processo prevalecem. Execute o MCP a partir da raiz do projeto para localizar os arquivos `.env`.

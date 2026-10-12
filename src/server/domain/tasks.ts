@@ -1,6 +1,7 @@
 import { asc, eq, max } from "drizzle-orm";
 import type { LemeDatabase } from "../db";
 import { tasks, type Task } from "../schema";
+import { createTaskInput } from "./inputs";
 
 export class DomainError extends Error {
   constructor(
@@ -45,8 +46,8 @@ function reindexColumn(db: LemeDatabase, column: Task["column"]) {
 export function createTaskDomain(db: LemeDatabase): Leme {
   return {
     createTask(title: string) {
-      const trimmed = title.trim();
-      if (!trimmed) {
+      const parsed = createTaskInput.shape.title.safeParse(title);
+      if (!parsed.success) {
         throw new DomainError("BAD_REQUEST", "O título é obrigatório.");
       }
 
@@ -54,7 +55,7 @@ export function createTaskDomain(db: LemeDatabase): Leme {
         const now = Date.now();
         const tarefa: Task = {
           id: crypto.randomUUID(),
-          title: trimmed,
+          title: parsed.data,
           description: null,
           column: "todo",
           position: nextPosition(tx, "todo"),

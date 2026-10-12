@@ -1,4 +1,4 @@
-import { DomainError } from "@/server/domain/tasks";
+import { createTaskInput } from "@/server/domain/inputs";
 import { getLeme } from "@/server/leme";
 import { requireApiKey } from "@/server/http/auth";
 
@@ -12,20 +12,17 @@ export async function POST(request: Request) {
   const denied = requireApiKey(request);
   if (denied) return denied;
 
-  let body: { title?: unknown };
+  let body: unknown;
   try {
-    body = (await request.json()) as { title?: unknown };
+    body = await request.json();
   } catch {
     return Response.json({ error: "Corpo inválido." }, { status: 400 });
   }
 
-  try {
-    const task = getLeme().createTask(typeof body.title === "string" ? body.title : "");
-    return Response.json({ task }, { status: 201 });
-  } catch (error) {
-    if (error instanceof DomainError) {
-      return Response.json({ error: error.message }, { status: 400 });
-    }
-    throw error;
+  const parsed = createTaskInput.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Corpo inválido: informe um título não vazio." }, { status: 400 });
   }
+  const task = getLeme().createTask(parsed.data.title);
+  return Response.json({ task }, { status: 201 });
 }

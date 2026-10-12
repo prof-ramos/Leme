@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
@@ -16,8 +16,11 @@ let output = "";
 web.stdout.on("data", (chunk) => { output += chunk; });
 web.stderr.on("data", (chunk) => { output += chunk; });
 const stopped = new Promise<void>((resolve) => web.once("exit", () => resolve()));
+await writeFile(join(dir, ".env.local"), `LEME_DB_PATH="${env.LEME_DB_PATH}"\n`);
+const mcpEnv = { ...process.env };
+delete mcpEnv.LEME_DB_PATH;
 const client = new Client({ name: "leme-live-test", version: "1.0.0" });
-const transport = new StdioClientTransport({ command: process.execPath, args: ["node_modules/tsx/dist/cli.mjs", "mcp/server.ts"], env: Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string")), stderr: "pipe" });
+const transport = new StdioClientTransport({ command: process.execPath, args: [resolve("node_modules/tsx/dist/cli.mjs"), resolve("mcp/server.ts")], cwd: dir, env: Object.fromEntries(Object.entries(mcpEnv).filter((entry): entry is [string, string] => typeof entry[1] === "string")), stderr: "pipe" });
 async function request(path: string, init: RequestInit = {}) {
   return fetch(`${url}${path}`, { ...init, headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...init.headers }, signal: AbortSignal.timeout(20_000) });
 }
@@ -30,7 +33,16 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   assert.ok(ready, output);
+  for (const body of ["null", "[]", "{}", '{"title":42}', '{"title":"   "}', "invalid JSON"]) {
+    assert.equal((await request("/api/v1/tasks", { method: "POST", body })).status, 400, body);
+  }
+  for (const method of ["GET", "POST", "DELETE"]) {
+    const path = method === "DELETE" ? "/api/v1/tasks/missing" : "/api/v1/tasks";
+    assert.equal((await request(path, { method, headers: { Authorization: "Bearer wrong" } })).status, 401);
+  }
   await client.connect(transport);
+  const invalidTask = await client.callTool({ name: "create_task", arguments: { title: "   " } });
+  assert.equal(invalidTask.isError, true);
   const tools = await client.listTools();
   assert.ok(tools.tools.some((tool) => tool.name === "create_task"));
   await Promise.all(Array.from({ length: 20 }, async (_, i) => {
@@ -54,7 +66,7 @@ try {
   assert.equal(remaining.length, 20);
   assert.deepEqual(remaining.map((task: { position: number }) => task.position), Array.from({ length: 20 }, (_, i) => i));
   assert.equal((await request("/api/v1/tasks/missing", { method: "DELETE" })).status, 404);
-  console.log("Live HTTP + MCP: 40 simultaneous creations, shared reads, 20 deletions, contiguous positions, 401/404 passed.");
+  console.log("Live HTTP + MCP: 40 simultaneous creations, shared reads, 20 deletions, contiguous positions, 401/400/404 and quoted MCP .env.local passed.");
 } catch (error) {
   console.error(output);
   throw error;
