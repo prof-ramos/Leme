@@ -1,37 +1,65 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createTaskAction, deleteTaskAction } from "@/server/actions";
 import type { Task } from "@/server/schema";
 
 const COLUMNS = [
-  { id: "todo", label: "A fazer" },
-  { id: "doing", label: "Fazendo" },
-  { id: "done", label: "Feito" },
+  { id: "todo", label: "A fazer", empty: "Comece por uma tarefa. Use Nova tarefa para escrever o que precisa ser feito." },
+  { id: "doing", label: "Fazendo", empty: "Nenhuma tarefa em andamento." },
+  { id: "done", label: "Feito", empty: "Nenhuma tarefa concluída." },
 ] as const;
 
-const PRIORITY_LABEL = {
-  baixa: "baixa",
-  media: "média",
-  alta: "alta",
-} as const;
+const PRIORITY_LABEL = { baixa: "baixa", media: "média", alta: "alta" } as const;
 
-type BoardProps = {
-  tasks: Task[];
-};
+function TaskItem({ task }: { task: Task }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const submitting = useRef(false);
 
-export function Board({ tasks }: BoardProps) {
+  function remove() {
+    if (submitting.current) return;
+    submitting.current = true;
+    setError(null);
+    startTransition(async () => {
+      try {
+        const result = await deleteTaskAction(task.id);
+        if (!result.ok) setError(result.error);
+      } catch {
+        setError("Não foi possível apagar a tarefa. Tente novamente.");
+      } finally {
+        submitting.current = false;
+      }
+    });
+  }
+
+  return (
+    <li className="task-item" data-color={task.color} aria-busy={pending}>
+      {task.priority !== "media" ? <p className="task-priority">Prioridade {PRIORITY_LABEL[task.priority]}</p> : null}
+      <p className="task-title">{task.title}</p>
+      <button type="button" onClick={remove} disabled={pending} className="quiet-button" aria-label={`${pending ? "Apagando" : "Apagar"} tarefa: ${task.title}`}>
+        {pending ? "Apagando…" : "Apagar"}
+      </button>
+      {error ? <p role="alert" className="task-error">{error}</p> : null}
+    </li>
+  );
+}
+
+export function Board({ tasks }: { tasks: Task[] }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [invalidTitle, setInvalidTitle] = useState(false);
+  const submitting = useRef(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key !== "c" && event.key !== "C") return;
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || (event.key !== "c" && event.key !== "C")) return;
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
+      if (target?.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
       event.preventDefault();
       setOpen(true);
     }
@@ -40,113 +68,100 @@ export function Board({ tasks }: BoardProps) {
   }, []);
 
   useEffect(() => {
-    if (open) {
+    const dialog = dialogRef.current;
+    if (open && dialog && !dialog.open) {
       setError(null);
+      setInvalidTitle(false);
+      dialog.querySelector("form")?.reset();
+      dialog.showModal();
       inputRef.current?.focus();
     }
   }, [open]);
 
-  async function onCreate(formData: FormData) {
-    const result = await createTaskAction(formData);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    setOpen(false);
+  function close() {
+    if (!submitting.current) dialogRef.current?.close();
+  }
+
+  function onCreate(formData: FormData) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setError(null);
+    setInvalidTitle(false);
+    startTransition(async () => {
+      try {
+        const result = await createTaskAction(formData);
+        if (!result.ok) {
+          setError(result.error);
+          setInvalidTitle(!String(formData.get("title") ?? "").trim());
+          inputRef.current?.focus();
+        } else {
+          dialogRef.current?.close();
+        }
+      } catch {
+        setError("Não foi possível criar a tarefa. Tente novamente.");
+      } finally {
+        submitting.current = false;
+      }
+    });
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--ink)] text-[var(--paper)]">
-      <header className="border-b border-[var(--line)] px-5 py-5 md:px-8">
-        <div className="mx-auto flex max-w-6xl items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] tracking-[0.28em] text-[var(--sage)] uppercase">Leme</p>
-            <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[var(--paper)] md:text-5xl">
-              Quadro
-            </h1>
-          </div>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="border border-[var(--sage)] px-4 py-2 text-[11px] tracking-[0.18em] text-[var(--sage)] uppercase"
-          >
-            Nova tarefa
-            <span className="ml-2 text-[var(--mist)]">C</span>
+    <div className="leme-board">
+      <header className="board-header">
+        <div className="board-heading">
+          <div><p className="brand-name">Leme</p><h1>Quadro</h1></div>
+          <button ref={triggerRef} type="button" onClick={() => setOpen(true)} className="primary-button">
+            Nova tarefa <kbd aria-hidden="true">C</kbd>
           </button>
         </div>
       </header>
-
-      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-5 py-6 md:grid-cols-3 md:px-8">
-        {COLUMNS.map((column) => {
-          const items = tasks.filter((task) => task.column === column.id);
+      <main className="board-columns">
+        {COLUMNS.map(column => {
+          const items = tasks.filter(task => task.column === column.id);
           return (
-            <section key={column.id} className="min-h-72 border border-[var(--line)] bg-[var(--panel)]">
-              <div className="flex items-baseline justify-between border-b border-[var(--line)] px-4 py-3">
-                <h2 className="text-[12px] tracking-[0.2em] text-[var(--silver)] uppercase">{column.label}</h2>
-                <span className="font-[family-name:var(--font-display)] text-2xl text-[var(--sage)]">{items.length}</span>
+            <section key={column.id} className="board-column" aria-labelledby={`column-${column.id}`}>
+              <div className="column-heading">
+                <h2 id={`column-${column.id}`}>{column.label}</h2>
+                <span aria-label={`${items.length} tarefas`}>{items.length}</span>
               </div>
-              <ul className="flex flex-col gap-3 p-3">
-                {items.map((task) => (
-                  <li key={task.id} className="border border-[var(--line)] bg-[var(--ink)]">
-                    <div className="h-0.5 bg-[var(--sage)]" />
-                    <div className="p-3">
-                      <div className="mb-2 flex items-center justify-between gap-2 text-[10px] tracking-[0.16em] text-[var(--mist)] uppercase">
-                        <span>{PRIORITY_LABEL[task.priority]}</span>
-                        <span>{task.color}</span>
-                      </div>
-                      <p className="text-sm leading-snug text-[var(--paper)]">{task.title}</p>
-                      <button
-                        type="button"
-                        onClick={() => deleteTaskAction(task.id)}
-                        className="mt-3 text-[10px] tracking-[0.16em] text-[var(--silver)] uppercase hover:text-[var(--paper)]"
-                      >
-                        Apagar
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {items.length ? <ul className="task-list">{items.map(task => <TaskItem key={task.id} task={task} />)}</ul> : <p className="column-empty">{column.empty}</p>}
             </section>
           );
         })}
       </main>
-
-      {open ? (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/70 p-4 md:items-center">
-          <form
-            action={onCreate}
-            className="w-full max-w-md border border-[var(--line)] bg-[var(--panel)] p-5"
-          >
-            <p className="text-[11px] tracking-[0.22em] text-[var(--sage)] uppercase">Nova tarefa</p>
-            <label className="mt-4 block text-[11px] tracking-[0.16em] text-[var(--silver)] uppercase">
-              Título
-              <input
-                ref={inputRef}
-                name="title"
-                className="mt-2 w-full border border-[var(--line)] bg-[var(--ink)] px-3 py-2 text-base text-[var(--paper)] outline-none focus:border-[var(--sage)]"
-                placeholder="O que precisa ser feito"
-                autoComplete="off"
-              />
-            </label>
-            {error ? <p className="mt-3 text-sm text-[var(--sage)]">{error}</p> : null}
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="px-3 py-2 text-[11px] tracking-[0.16em] text-[var(--silver)] uppercase"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="bg-[var(--sage)] px-4 py-2 text-[11px] tracking-[0.16em] text-[var(--ink)] uppercase"
-              >
-                Criar
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : null}
+      <dialog ref={dialogRef} className="task-dialog" aria-labelledby="new-task-title" onKeyDown={event => {
+        if (event.key !== "Tab") return;
+        const controls = Array.from(event.currentTarget.querySelectorAll<HTMLInputElement | HTMLButtonElement>("input, button"))
+          .filter(control => !control.disabled && control.tabIndex >= 0);
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }} onCancel={event => {
+        if (submitting.current) event.preventDefault();
+      }} onClose={() => {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }}>
+        <form onSubmit={event => {
+          event.preventDefault();
+          onCreate(new FormData(event.currentTarget));
+        }} aria-busy={pending}>
+          <h2 id="new-task-title">Nova tarefa</h2>
+          <label htmlFor="task-title">Título</label>
+          <input ref={inputRef} id="task-title" name="title" placeholder="O que precisa ser feito" autoComplete="off" readOnly={pending} aria-invalid={invalidTitle || undefined} aria-describedby={error ? "task-title-error" : undefined} onChange={() => { setError(null); setInvalidTitle(false); }} />
+          {error ? <p id="task-title-error" role="alert" className="task-error">{error}</p> : null}
+          <div className="dialog-actions">
+            <button type="button" onClick={close} disabled={pending} className="quiet-button">Cancelar</button>
+            <button type="submit" disabled={pending} className="primary-button">{pending ? "Criando…" : "Criar"}</button>
+          </div>
+        </form>
+      </dialog>
     </div>
   );
 }

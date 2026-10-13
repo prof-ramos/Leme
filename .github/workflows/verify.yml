@@ -1,0 +1,31 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22.22.2", "24.15.0", "26.0.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --engine-strict
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test:live
+        env:
+          LEME_TEST_MODE: production

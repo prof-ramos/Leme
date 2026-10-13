@@ -17,3 +17,16 @@ A tela não pede login. `GET`, `POST` e `DELETE` em `/api/v1/tasks` exigem `Auth
 ```bash
 npm test
 ```
+
+## Arquitetura e verificação
+
+Requer Node.js 22.22.2+ na linha 22, 24.15.0+ na linha 24 ou 26.x. Node.js 23 e 25 não são compatíveis com as dependências de teste. Instale as versões do lockfile com `npm ci`.
+
+```bash
+npm test
+npm run typecheck
+npm run test:live
+npm run build
+```
+
+O teste ao vivo inicia Next e MCP em um banco temporário e limpa seus processos e arquivos ao terminar. Usa a porta 3218; não execute junto de outro Next no mesmo checkout. Veja [a arquitetura atual](docs/architecture.md) para limites da implementação, conexões e transações.

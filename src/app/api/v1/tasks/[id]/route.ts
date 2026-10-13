@@ -1,4 +1,5 @@
-import { DomainError, createLeme } from "@/server/domain/tasks";
+import { DomainError } from "@/server/domain/tasks";
+import { getLeme } from "@/server/leme";
 import { requireApiKey } from "@/server/http/auth";
 
 export async function DELETE(
@@ -10,7 +11,7 @@ export async function DELETE(
 
   const { id } = await context.params;
   try {
-    createLeme().deleteTask(id);
+    getLeme().deleteTask(id);
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof DomainError && error.code === "NOT_FOUND") {
