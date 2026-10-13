@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #070908;
+  --panel: #101412;
+  --line: #1c221f;
+  --sage: #8fa887;
+  --silver: #c8cdc8;
+  --mist: #9aa39a;
+  --paper: #e7ebe6;
+}
+
+html,
+body {
+  background: var(--ink);
+  color: var(--paper);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--sage) 40%, transparent);
+}
