@@ -20,7 +20,7 @@ npm test
 
 ## Arquitetura e verificação
 
-Requer Node 22 ou 24+. Instale as versões do lockfile com `npm ci`.
+Requer Node.js 22.22.2+ na linha 22, 24.15.0+ na linha 24 ou 26.x. Node.js 23 e 25 não são compatíveis com as dependências de teste. Instale as versões do lockfile com `npm ci`.
 
 ```bash
 npm test

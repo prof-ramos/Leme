@@ -16,7 +16,7 @@ A entrada de criação usa um schema Zod único em `domain/inputs.ts`, compartil
 
 ## Dependências
 
-O lockfile registra a instalação usada nos testes. Node 22 ou 24+ é requerido; validado localmente em Node 26.10.0. Next permanece na versão 15. Drizzle 0.45.4 e Vitest 4.1.11 substituem faixas com alertas conhecidos; o override PostCSS 8.5.29 corrige a dependência transitiva do Next sem uma migração para Next 16. Revisar o override quando o Next atualizar sua dependência.
+O lockfile registra a instalação usada nos testes. A faixa de Node.js é `^22.22.2 || ^24.15.0 || ^26.0.0`, alinhada ao requisito de jsdom 30.1.2; Node.js 23 e 25 ficam excluídos. A validação anterior foi feita em Node 26.10.0. Next permanece na versão 15. Drizzle 0.45.4 e Vitest 4.1.11 substituem faixas com alertas conhecidos; o override PostCSS 8.5.29 corrige a dependência transitiva do Next sem uma migração para Next 16. Revisar o override quando o Next atualizar sua dependência.
 
 Referências para as correções: [Drizzle](https://github.com/advisories/GHSA-gpj5-g38j-94v9), [Vitest](https://github.com/advisories/GHSA-82fw-gwwq-j7x9) e [PostCSS](https://github.com/advisories/GHSA-fxqj-rqcc-2cmp). A auditoria da instalação final encontrou zero vulnerabilidades conhecidas em 2026-10-11; isso não substitui revisão do código nem garante ausência de falhas futuras.
 
