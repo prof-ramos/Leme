@@ -22,6 +22,10 @@ export async function deleteTaskAction(id: string) {
     revalidatePath("/");
     return { ok: true as const };
   } catch (error) {
+    if (error instanceof DomainError && error.code === "NOT_FOUND") {
+      revalidatePath("/");
+      return { ok: true as const };
+    }
     const message = error instanceof DomainError ? error.message : "Não foi possível apagar a tarefa. Tente novamente.";
     return { ok: false as const, error: message };
   }
