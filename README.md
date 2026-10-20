@@ -12,7 +12,7 @@ npm run dev
 
 A tela sobe em `http://localhost:3000`. O MCP sobe no mesmo comando e grava o mesmo arquivo SQLite (`data/leme.sqlite`).
 
-A tela não pede login. `GET`, `POST` e `DELETE` em `/api/v1/tasks` exigem `Authorization: Bearer` igual a `LEME_API_KEY`.
+A tela não pede login. `GET` e `POST` em `/api/v1/tasks` e `DELETE` em `/api/v1/tasks/{id}` exigem `Authorization: Bearer` igual a `LEME_API_KEY`.
 
 ```bash
 npm test
